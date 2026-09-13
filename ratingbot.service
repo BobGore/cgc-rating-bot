@@ -1,0 +1,16 @@
+[Unit]
+Description=CGC Rating List Bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=CHANGEME
+WorkingDirectory=/home/CHANGEME/ratingbot
+EnvironmentFile=/home/CHANGEME/ratingbot/.env
+ExecStart=/home/CHANGEME/ratingbot/venv/bin/python bot.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

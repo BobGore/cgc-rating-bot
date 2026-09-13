@@ -1,0 +1,13 @@
+# Secrets — never commit
+.env
+
+# Local data
+players.db
+
+# Environment
+venv/
+__pycache__/
+*.pyc
+
+# Real roster — real accounts, not for a public repo
+roster.csv
