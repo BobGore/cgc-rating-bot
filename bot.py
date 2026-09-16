@@ -9,6 +9,7 @@ Commands:
 import asyncio
 import logging
 import os
+from datetime import datetime, timezone
 
 import aiohttp
 import discord
@@ -122,16 +123,28 @@ async def _gather(players):
         if isinstance(result, Exception):
             problems.append(f"{username} ({result})")
             continue
+        rating, last_played = result
         source = sources.SUPPORTED[(site, time_control)][0]
         try:
-            otb = to_uscf(result, source)
+            otb = to_uscf(rating, source)
         except OutOfRange as exc:
             problems.append(f"{username} ({exc})")
             continue
-        rows.append((username, otb, result, f"{site} {time_control}"))
+        rows.append((username, otb, rating, f"{site} {time_control}", last_played))
 
     rows.sort(key=lambda r: (-r[1], r[0].lower()))
     return rows, problems
+
+
+def _last_played_note(last_played):
+    """Trailing note for a row: the last-played date, flagged if it's stale."""
+    if last_played is None:
+        return ""
+    days_ago = (datetime.now(timezone.utc) - last_played).days
+    date_str = last_played.date().isoformat()
+    if days_ago > sources.STALE_DAYS:
+        return f"  (last game: {date_str} — no games in the last {sources.STALE_DAYS} days)"
+    return f"  (last game: {date_str})"
 
 
 def _render(rows):
@@ -148,8 +161,8 @@ def _render(rows):
             f"{'-' * width}  {'-' * 16}  {'-' * 15}  {'-' * 17}"
         )
         lines = [
-            f"{name:<{width}}  {otb:>16}  {online:>15}  {site}"
-            for name, otb, online, site in section
+            f"{name:<{width}}  {otb:>16}  {online:>15}  {site}{_last_played_note(last_played)}"
+            for name, otb, online, site, last_played in section
         ]
 
         first = True
