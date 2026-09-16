@@ -34,6 +34,12 @@ ALLOWED_CHANNEL_IDS = {
     1548669940368941108,  # test
 }
 
+# Can !remove any entry, regardless of who registered it.
+ADMIN_USER_IDS = {
+    810486671174795274,  # Bob
+    315229727629508609,  # Matt
+}
+
 # (lower bound on USCF-equivalent, heading)
 SECTIONS = [
     (1700, "+1700 Section"),
@@ -44,7 +50,15 @@ SECTIONS = [
 
 intents = discord.Intents.default()
 intents.message_content = True
-bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
+# Command input (usernames, site, time control) gets echoed back in replies
+# unfiltered - this stops any of it from ever triggering a real @everyone/
+# @here/role/user ping, regardless of what ends up in a message.
+bot = commands.Bot(
+    command_prefix="!",
+    intents=intents,
+    help_command=None,
+    allowed_mentions=discord.AllowedMentions.none(),
+)
 
 
 @bot.event
@@ -75,7 +89,7 @@ async def add(ctx, username: str, site: str, time_control: str):
             await _reject(ctx, f"couldn't reach {site} ({exc})")
             return
 
-    if not store.add(site, username, time_control):
+    if not store.add(site, username, time_control, ctx.author.id):
         await _reject(ctx, f"{username} is already on the list for {site} {time_control}")
         return
 
@@ -84,10 +98,17 @@ async def add(ctx, username: str, site: str, time_control: str):
 
 @bot.command()
 async def remove(ctx, username: str):
-    if store.remove(username):
-        await ctx.message.add_reaction("\u2705")
-    else:
+    owners = store.owners(username)
+    if not owners:
         await _reject(ctx, f"'{username}' isn't on the list")
+        return
+
+    if ctx.author.id not in ADMIN_USER_IDS and owners != {ctx.author.id}:
+        await _reject(ctx, f"only {username} or an admin can remove this")
+        return
+
+    store.remove(username)
+    await ctx.message.add_reaction("\u2705")
 
 
 @bot.command(name="helpratingbot")
