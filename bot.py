@@ -137,13 +137,13 @@ async def _gather(players):
 
 
 def _last_played_note(last_played):
-    """Trailing note for a row: the last-played date, flagged if it's stale."""
+    """Trailing note for a row: the last-played date, flagged if it's stale. Kept short to avoid wrapping."""
     if last_played is None:
         return ""
     days_ago = (datetime.now(timezone.utc) - last_played).days
     date_str = last_played.date().isoformat()
     if days_ago > sources.STALE_DAYS:
-        return f"  (last game: {date_str} — no games in the last {sources.STALE_DAYS} days)"
+        return f"  (last game: {date_str} — Stale {sources.STALE_DAYS}+ days)"
     return f"  (last game: {date_str})"
 
 
