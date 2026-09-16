@@ -43,7 +43,7 @@ depends on.
 python3 -m venv venv
 venv/bin/pip install discord.py aiohttp
 
-echo 'DISCORD_TOKEN=...' > .env && chmod 600 .env
+cp .env.example .env && chmod 600 .env   # then paste your token in
 
 cp roster.csv.example roster.csv    # optional: bulk-load existing members
 venv/bin/python seed.py
