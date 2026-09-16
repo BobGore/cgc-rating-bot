@@ -25,6 +25,15 @@ log = logging.getLogger("ratingbot")
 MAX_MESSAGE = 1900  # Discord's limit is 2000; leave room for the code fences.
 MAX_CONCURRENT_FETCHES = 5
 
+# Every command only works in one of these channels (the live rating channel,
+# plus a test channel on a separate server). A channel ID only ever belongs to
+# one server, so this also keeps the bot inert everywhere else it might get
+# invited to, and in DMs - no separate guild check needed.
+ALLOWED_CHANNEL_IDS = {
+    853715007311970314,  # live
+    1548669940368941108,  # test
+}
+
 # (lower bound on USCF-equivalent, heading)
 SECTIONS = [
     (1700, "+1700 Section"),
@@ -41,6 +50,11 @@ bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 @bot.event
 async def on_ready():
     log.info("connected as %s", bot.user)
+
+
+@bot.check
+async def _in_rating_channel(ctx):
+    return ctx.channel.id in ALLOWED_CHANNEL_IDS
 
 
 @bot.command()
@@ -185,7 +199,7 @@ async def _reject(ctx, reason):
 async def on_command_error(ctx, error):
     if isinstance(error, commands.MissingRequiredArgument):
         await _reject(ctx, "Usage: `!add <username> <site> <time control>`")
-    elif isinstance(error, commands.CommandNotFound):
+    elif isinstance(error, (commands.CommandNotFound, commands.CheckFailure)):
         pass
     else:
         log.exception("command failed", exc_info=error)
