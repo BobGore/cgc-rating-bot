@@ -25,6 +25,10 @@ USER_AGENT = "CGC-Rating-List-Bot/1.0 (contact: your-email@example.com)"
 CACHE_TTL = 3600
 _cache: dict[tuple, tuple[float, tuple]] = {}
 
+# aiohttp's default is 5 minutes with none given - too long to let a hung
+# request occupy one of the concurrent fetch slots in bot.py.
+REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=10)
+
 # Whether fetch() also reports each player's last-played date. For lichess this
 # costs a second API call per player per !rating (chess.com's is free, already
 # in the stats response) - gated by the same flag so behaviour is consistent
@@ -69,7 +73,7 @@ async def fetch(session, site, username, time_control):
 async def _fetch_chesscom(session, username, time_control):
     field = SUPPORTED[("chess.com", time_control)][1]
     url = f"https://api.chess.com/pub/player/{username.lower()}/stats"
-    async with session.get(url, headers={"User-Agent": USER_AGENT}) as resp:
+    async with session.get(url, headers={"User-Agent": USER_AGENT}, timeout=REQUEST_TIMEOUT) as resp:
         if resp.status == 404:
             raise NoRating(f"no chess.com account '{username}'")
         resp.raise_for_status()
@@ -88,7 +92,7 @@ async def _fetch_chesscom(session, username, time_control):
 async def _fetch_lichess(session, username, time_control):
     field = SUPPORTED[("lichess", time_control)][1]
     url = f"https://lichess.org/api/user/{username}"
-    async with session.get(url, headers={"User-Agent": USER_AGENT}) as resp:
+    async with session.get(url, headers={"User-Agent": USER_AGENT}, timeout=REQUEST_TIMEOUT) as resp:
         if resp.status == 404:
             raise NoRating(f"no lichess account '{username}'")
         resp.raise_for_status()
@@ -120,7 +124,7 @@ async def _fetch_lichess_last_played(session, username, perf_type):
         url = f"https://lichess.org/api/games/user/{username}"
         params = {"max": 1, "perfType": perf_type, "rated": "true"}
         headers = {"User-Agent": USER_AGENT, "Accept": "application/x-ndjson"}
-        async with session.get(url, params=params, headers=headers) as resp:
+        async with session.get(url, params=params, headers=headers, timeout=REQUEST_TIMEOUT) as resp:
             resp.raise_for_status()
             body = (await resp.text()).strip()
 
