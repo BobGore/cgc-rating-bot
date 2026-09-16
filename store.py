@@ -17,8 +17,11 @@ CREATE TABLE IF NOT EXISTS players (
 """
 
 
+DB_LOCK_TIMEOUT = 5.0  # seconds to retry if another thread is mid-write, before giving up
+
+
 def connect():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=DB_LOCK_TIMEOUT)
     conn.row_factory = sqlite3.Row
     conn.execute(SCHEMA)
     _migrate(conn)

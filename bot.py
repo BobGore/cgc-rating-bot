@@ -34,11 +34,17 @@ ALLOWED_CHANNEL_IDS = {
     1548669940368941108,  # test
 }
 
-# Can !remove any entry, regardless of who registered it.
+# Can !remove any entry regardless of who registered it, and are exempt from
+# the cooldown below (so testing isn't rate-limited).
 ADMIN_USER_IDS = {
     810486671174795274,  # Bob
     315229727629508609,  # Matt
 }
+
+# !add and !rating - the two commands that hit chess.com/lichess - are
+# limited to one use per user per this many seconds, to stop repeated calls
+# from hammering those APIs.
+COOLDOWN_SECONDS = 600
 
 # (lower bound on USCF-equivalent, heading)
 SECTIONS = [
@@ -71,7 +77,15 @@ async def _in_rating_channel(ctx):
     return ctx.channel.id in ALLOWED_CHANNEL_IDS
 
 
+def _cooldown_for(ctx):
+    """No cooldown for admins; everyone else gets COOLDOWN_SECONDS per user."""
+    if ctx.author.id in ADMIN_USER_IDS:
+        return None
+    return commands.Cooldown(1, COOLDOWN_SECONDS)
+
+
 @bot.command()
+@commands.dynamic_cooldown(_cooldown_for, commands.BucketType.user)
 async def add(ctx, username: str, site: str, time_control: str):
     site, time_control = site.lower(), time_control.lower()
 
@@ -89,7 +103,7 @@ async def add(ctx, username: str, site: str, time_control: str):
             await _reject(ctx, f"couldn't reach {site} ({exc})")
             return
 
-    if not store.add(site, username, time_control, ctx.author.id):
+    if not await asyncio.to_thread(store.add, site, username, time_control, ctx.author.id):
         await _reject(ctx, f"{username} is already on the list for {site} {time_control}")
         return
 
@@ -98,7 +112,7 @@ async def add(ctx, username: str, site: str, time_control: str):
 
 @bot.command()
 async def remove(ctx, username: str):
-    owners = store.owners(username)
+    owners = await asyncio.to_thread(store.owners, username)
     if not owners:
         await _reject(ctx, f"'{username}' isn't on the list")
         return
@@ -107,7 +121,7 @@ async def remove(ctx, username: str):
         await _reject(ctx, f"only {username} or an admin can remove this")
         return
 
-    store.remove(username)
+    await asyncio.to_thread(store.remove, username)
     await ctx.message.add_reaction("\u2705")
 
 
@@ -124,8 +138,9 @@ async def help_rating_bot(ctx):
 
 
 @bot.command()
+@commands.dynamic_cooldown(_cooldown_for, commands.BucketType.user)
 async def rating(ctx):
-    players = store.all_players()
+    players = await asyncio.to_thread(store.all_players)
     if not players:
         await ctx.send("Nobody is registered yet. Use `!add <username> <site> <time control>`.")
         return
@@ -220,6 +235,8 @@ async def _reject(ctx, reason):
 async def on_command_error(ctx, error):
     if isinstance(error, commands.MissingRequiredArgument):
         await _reject(ctx, "Usage: `!add <username> <site> <time control>`")
+    elif isinstance(error, commands.CommandOnCooldown):
+        await _reject(ctx, f"slow down — try again in {error.retry_after:.0f}s")
     elif isinstance(error, (commands.CommandNotFound, commands.CheckFailure)):
         pass
     else:
