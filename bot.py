@@ -64,6 +64,11 @@ bot = commands.Bot(
     intents=intents,
     help_command=None,
     allowed_mentions=discord.AllowedMentions.none(),
+    # Without this, "! add ..." (any whitespace after the prefix) parses to an
+    # empty command name and is silently dropped - no reaction, no error, not
+    # even CommandNotFound. Confirmed this is why at least one real !add went
+    # unanswered.
+    strip_after_prefix=True,
 )
 
 
