@@ -9,6 +9,12 @@ The fits are only valid for blitz 500-3000. Outside that the cubics diverge
 so anything out of range raises rather than returning a number.
 """
 
+# Which ChessGoals fit COEFFS below was taken from. Shown to users via
+# !helpratingbot - update this alongside COEFFS whenever the fits are
+# refitted, so the displayed version never drifts from what's actually
+# being used.
+FIT_VERSION = "July 2026"
+
 # a*x^3 + b*x^2 + c*x + d, where x is Chess.com blitz.
 COEFFS = {
     "cc_bullet": (-5.43772231680863e-8, 0.000344377955797529, 0.326912399827871, 305.293854154169),

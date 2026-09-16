@@ -17,7 +17,7 @@ from discord.ext import commands
 
 import sources
 import store
-from conversion import OutOfRange, to_uscf
+from conversion import FIT_VERSION, OutOfRange, to_uscf
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("ratingbot")
@@ -133,7 +133,7 @@ async def help_rating_bot(ctx):
         "`!remove <username>` — removes every entry for that username\n"
         "`!rating` — the current list\n"
         "Sites: `chess.com` (blitz, rapid, bullet), `lichess` (blitz, rapid, bullet, classical).\n"
-        "OTB estimates use the ChessGoals July 2026 conversion, USCF scale."
+        f"OTB estimates use the ChessGoals {FIT_VERSION} conversion, USCF scale."
     )
 
 

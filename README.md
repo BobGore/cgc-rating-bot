@@ -32,10 +32,10 @@ Two things worth knowing:
   1047, so inverting a FIDE rating between roughly 1660 and 1815 has two
   solutions and picks the wrong one.
 
-The coefficients are refitted annually. To update, replace the `COEFFS` dict in
-`conversion.py` and run `python3 check_coeffs.py`, which verifies that every
-cubic is still monotonic across the domain — the assumption the inversion
-depends on.
+The coefficients are refitted annually. To update, replace the `COEFFS` dict
+and `FIT_VERSION` string in `conversion.py`, then run `python3
+check_coeffs.py`, which verifies that every cubic is still monotonic across
+the domain — the assumption the inversion depends on.
 
 ## Running it
 
