@@ -41,7 +41,7 @@ depends on.
 
 ```bash
 python3 -m venv venv
-venv/bin/pip install discord.py aiohttp
+venv/bin/pip install -r requirements.txt
 
 cp .env.example .env && chmod 600 .env   # then paste your token in
 
