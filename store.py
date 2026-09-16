@@ -76,6 +76,15 @@ def set_added_by(username, discord_id):
         return cur.rowcount
 
 
+def unowned_usernames():
+    """Distinct usernames with no recorded owner (added_by is NULL)."""
+    with connect() as conn:
+        rows = conn.execute(
+            "SELECT DISTINCT username FROM players WHERE added_by IS NULL ORDER BY username"
+        ).fetchall()
+    return [r["username"] for r in rows]
+
+
 def all_players():
     with connect() as conn:
         rows = conn.execute(

@@ -70,6 +70,7 @@ For a persistent install, edit the paths in `ratingbot.service`, copy it to
 | `seed.py` | Bulk-load from `roster.csv` |
 | `check_coeffs.py` | Validates coefficients after an update |
 | `set_owner.py` | Backfill who a pre-existing registration belongs to |
+| `list_unowned.py` | List registrations with no recorded owner |
 
 `.env`, `players.db` and `roster.csv` are gitignored: a token, local data, and
 a list of real accounts respectively.
